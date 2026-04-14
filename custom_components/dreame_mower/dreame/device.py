@@ -141,6 +141,16 @@ from .map import DreameMapMowerMapManager, DreameMowerMapDecoder
 _LOGGER = logging.getLogger(__name__)
 
 
+
+
+def _safe_mower_property_name(value: int) -> str:
+    """Return a readable property name even for unknown property ids."""
+    try:
+        return DreameMowerProperty(value).name
+    except ValueError:
+        return f"UNKNOWN_PROPERTY_{value}"
+
+
 class DreameMowerDevice:
     """Support for Dreame Mower"""
 
@@ -367,7 +377,7 @@ class DreameMowerDevice:
                     ):
                         _LOGGER.info(
                             "Property %s Value Discarded: %s <- %s",
-                            DreameMowerProperty(did).name,
+                            _safe_mower_property_name(did),
                             self._dirty_data[did].value,
                             value,
                         )
@@ -399,26 +409,26 @@ class DreameMowerDevice:
                         if current_value is not None:
                             _LOGGER.debug(
                                 "Property %s Changed: %s -> %s",
-                                DreameMowerProperty(did).name,
+                                _safe_mower_property_name(did),
                                 current_value,
                                 value,
                             )
                         else:
                             _LOGGER.debug(
                                 "Property %s Added: %s",
-                                DreameMowerProperty(did).name,
+                                _safe_mower_property_name(did),
                                 value,
                             )
                     self.data[did] = value
                     if did in self._property_update_callback:
-                        _LOGGER.debug("Property %s Callbacks: %s", DreameMowerProperty(did).name, self._property_update_callback[did])
+                        _LOGGER.debug("Property %s Callbacks: %s", _safe_mower_property_name(did), self._property_update_callback[did])
                         for callback in self._property_update_callback[did]:
                             if not self._ready and custom_property:
                                 callback(current_value)
                             else:
                                 callbacks.append([callback, current_value])
             else:
-                _LOGGER.debug("Property %s Not Available", DreameMowerProperty(did).name)
+                _LOGGER.debug("Property %s Not Available", _safe_mower_property_name(did))
 
         if not self._ready:
             self.capability.refresh(
@@ -1964,7 +1974,7 @@ class DreameMowerDevice:
                         if value is None or v.value == value:
                             _LOGGER.info(
                                 "Property %s Value Restored: %s <- %s",
-                                DreameMowerProperty(k).name,
+                                _safe_mower_property_name(k),
                                 v.previous_value,
                                 value,
                             )
