@@ -1,84 +1,186 @@
-![Logo](https://raw.githubusercontent.com/Tasshack/dreame-vacuum/dev/docs/media/logo.png)
+# Dreame / MOVA Mower for Home Assistant
 
-# Dreame/MOVA lawn mower integration for Home Assistant
+Control your Dreame and MOVA robotic mowers from Home Assistant, including multi-map scheduling support for robots such as the MOVA Lidar 1200.
 
-[![GitHub Release](https://img.shields.io/github/v/release/bhuebschen/dreame-mower?style=flat-square)](https://github.com/bhuebschen/dreame-mower/releases)
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square)](https://hacs.xyz/)
+This integration adds:
 
-This is a custom integration for Home Assistant that allows you to control your Dreame lawn mower robot
+* Lawn mower entity support
+* Start / Pause / Return to dock
+* Multi-map selection
+* Start mowing directly on a selected map
+* Home Assistant automations for map-based schedules
 
-## (current) Features
+## Features
 
-- Start/Stop mowing.
-- Send back to home.
+* Supports Dreamehome / MOVAhome accounts
+* Exposes the mower as a Home Assistant `lawn_mower` entity
+* Select the active map from Home Assistant
+* New services to automate mowing by map:
 
-### Please note: this is a modified version of Tasshack's "Dreame Vacuum" integration to work with the lawn mower, in this state it may causes a lot of error-messages.
+  * `dreame_mower.mower_run_map`
+  * `dreame_mower.mower_run_map_by_name`
+* Compatible with multiple saved maps and zones on MOVA Lidar 1200
 
-### If you are interested in the (original) Vacuum-integration, please take a look at: https://github.com/Tasshack/dreame-vacuum
+Example use case:
+
+* Monday / Wednesday / Friday → mow "Front Garden"
+* Tuesday / Thursday / Saturday → mow "Back Garden"
+
+without having to manually switch the active map in the MOVA app.
 
 ## Installation
 
-### HACS (Recommended)
+### HACS
 
-1. Ensure that [HACS](https://hacs.xyz/) is installed in your Home Assistant instance.
+1. Open HACS
+2. Add this repository as a custom repository
+3. Category: `Integration`
+4. Install "Dreame / MOVA Mower"
+5. Restart Home Assistant
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=bhuebschen&repository=dreame-mower&category=integration)
+### Manual installation
 
--- or --
+Copy:
 
-2. Add this repository as a custom repository in HACS:
-   - Open HACS in Home Assistant.
-   - Go to **Integrations**.
-   - Click on the three dots in the top-right corner and select **Custom repositories**.
-   - Add the following URL: `https://github.com/bhuebschen/dreame-mower`.
-   - Select **Integration** as the category.
-3. Search for "Dreame Mower" in the HACS integrations list and install it.
+```text
+custom_components/dreame_mower/
+```
 
-### Manual Installation
+into:
 
-1. Download the latest release from the [GitHub Releases page](https://github.com/bhuebschen/dreame-mower/releases).
-2. Extract the downloaded archive.
-3. Copy the `custom_components/dreame-mower` folder to your Home Assistant `custom_components` directory.
-   - Example: `/config/custom_components/dreame-mower`
-4. Restart Home Assistant.
+```text
+/config/custom_components/dreame_mower/
+```
+
+Then restart Home Assistant.
 
 ## Configuration
 
-<a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=dreame_mower" target="_blank"><img src="https://my.home-assistant.io/badges/config_flow_start.svg" alt="Open your Home Assistant instance and start setting up a new integration." /></a>
+After installation:
 
--- or --
+1. Go to Settings → Devices & Services
+2. Add integration: `Dreame / MOVA Mower`
+3. Login using your MOVAhome / Dreamehome account
 
-1. In Home Assistant, navigate to **Settings** > **Devices & Services**.
-2. Click **Add Integration**.
-3. Search for "Dreame Mower" and select it.
-4. Enter the credentials you used in your Dreamehome/MOVAhome App
-5. Complete the setup process.
+The mower should appear as a `lawn_mower` entity.
 
-## Usage
+## Available Services
 
-Once the integration is configured, your Dreame/MOVA Mower(s) will appear as entities in Home Assistant.
+### Select a map only
 
-## Troubleshooting
+```yaml
+service: dreame_mower.mower_select_map
+target:
+  entity_id: lawn_mower.mova_lidar_1200
+data:
+  map_id: 2
+```
 
-- Ensure your Dreame/MOVA account credentials are correct.
-- Check the Home Assistant logs for any errors related to the integration.
+### Select a map and immediately start mowing
 
-## Support
+```yaml
+service: dreame_mower.mower_run_map
+target:
+  entity_id: lawn_mower.mova_lidar_1200
+data:
+  map_id: 2
+  start_delay: 5
+```
 
-If you encounter any issues or have feature requests, please open an issue on the [GitHub Issues page](https://github.com/bhuebschen/dreame-mower/issues).
+### Select a map by name and start mowing
 
-## Contributions
+```yaml
+service: dreame_mower.mower_run_map_by_name
+target:
+  entity_id: lawn_mower.mova_lidar_1200
+data:
+  map_name: Front Garden
+  start_delay: 5
+```
 
-Contributions are welcome! Feel free to submit pull requests to improve this integration.
+## Example Automations
 
-## License
+### Front garden
 
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/bhuebschen/dreame-mower/blob/main/LICENSE) file for details.
+```yaml
+alias: Mow front garden
+trigger:
+  - platform: time
+    at: "09:00:00"
+condition:
+  - condition: time
+    weekday:
+      - mon
+      - wed
+      - fri
+action:
+  - service: dreame_mower.mower_run_map_by_name
+    target:
+      entity_id: lawn_mower.mova_lidar_1200
+    data:
+      map_name: Front Garden
+      start_delay: 5
+```
 
-# Thanks / Contributors
+### Back garden
 
-- [Tasshack](https://github.com/Tasshack)
-- [Laurentiu Tanase](https://github.com/larieu)
-- [Josef Kyrian](https://github.com/josef-kyrian)
-- [Anton Daubert](https://github.com/antondaubert)
-- [Loïc](https://github.com/zoic21)
+```yaml
+alias: Mow back garden
+trigger:
+  - platform: time
+    at: "09:00:00"
+condition:
+  - condition: time
+    weekday:
+      - tue
+      - thu
+      - sat
+action:
+  - service: dreame_mower.mower_run_map_by_name
+    target:
+      entity_id: lawn_mower.mova_lidar_1200
+    data:
+      map_name: Back Garden
+      start_delay: 5
+```
+
+## Notes
+
+This integration is currently focused on reliable mower control and multi-map scheduling.
+
+Map rendering, live mower position and session tracking are planned for a future release inspired by the `dreame-mower-better` project.
+
+---
+
+## Changelog
+
+### v0.1.0
+
+* Initial Home Assistant support for Dreame / MOVA mowers
+* Added lawn mower entity with:
+
+  * Start mowing
+  * Pause
+  * Return to dock
+* Added support for selecting the active saved map
+
+### v0.1.1
+
+* Added `mower_run_map` service
+* Added `mower_run_map_by_name` service
+* Allows selecting a map then automatically starting mowing after a configurable delay
+* Added safeguards to prevent map switching while the mower is already running
+
+### v0.1.2
+
+* Improved compatibility with MOVA Lidar 1200 multi-map setups
+* Better handling of map names and unknown map errors
+* Added Home Assistant examples for scheduled mowing on multiple maps
+
+### Planned
+
+* Live map view
+* Robot position overlay
+* Current zone information
+* Session progress and mowing history
+* Zone-based mowing from Home Assistant

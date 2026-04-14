@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import voluptuous as vol
 from typing import Final
 
@@ -110,6 +112,10 @@ SUPPORT_DREAME = (
     | LawnMowerEntityFeature.DOCK
 )
 
+SERVICE_RUN_MAP = "mower_run_map"
+SERVICE_RUN_MAP_BY_NAME = "mower_run_map_by_name"
+INPUT_START_DELAY = "start_delay"
+
 STATE_CODE_TO_STATE: Final = {
     DreameMowerState.UNKNOWN: STATE_UNKNOWN,
     DreameMowerState.MOWING: LawnMowerActivity.MOWING,
@@ -186,6 +192,28 @@ async def async_setup_entry(
             vol.Required(INPUT_MAP_ID): cv.positive_int,
         },
         DreameMower.async_select_map.__name__,
+    )
+
+    platform.async_register_entity_service(
+        SERVICE_RUN_MAP,
+        {
+            vol.Required(INPUT_MAP_ID): cv.positive_int,
+            vol.Optional(INPUT_START_DELAY, default=5): vol.All(
+                vol.Coerce(int), vol.Range(min=0, max=60)
+            ),
+        },
+        DreameMower.async_run_map.__name__,
+    )
+
+    platform.async_register_entity_service(
+        SERVICE_RUN_MAP_BY_NAME,
+        {
+            vol.Required(INPUT_MAP_NAME): cv.string,
+            vol.Optional(INPUT_START_DELAY, default=5): vol.All(
+                vol.Coerce(int), vol.Range(min=0, max=60)
+            ),
+        },
+        DreameMower.async_run_map_by_name.__name__,
     )
 
     platform.async_register_entity_service(
@@ -740,7 +768,67 @@ class DreameMower(DreameMowerEntity, LawnMowerEntity):
 
     async def async_select_map(self, map_id) -> None:
         """Switch selected map."""
-        await self._try_command("Unable to switch to selected map: %s", self.device.set_selected_map, map_id)
+        await self._try_command(
+            "Unable to switch to selected map: %s",
+            self.device.set_selected_map,
+            map_id,
+        )
+
+    async def async_run_map(self, map_id: int, start_delay: int = 5) -> None:
+        """Select a saved map, wait briefly, then start mowing."""
+        if self.device.status.started:
+            raise HomeAssistantError(
+                "The mower is already running. Pause or dock it before switching maps."
+            )
+
+        if (
+            not self.device.status.map_data_list
+            or map_id not in self.device.status.map_data_list
+        ):
+            raise HomeAssistantError(f"Unknown map_id: {map_id}")
+
+        selected_map = self.device.status.selected_map
+        selected_map_id = selected_map.map_id if selected_map else None
+
+        if selected_map_id != map_id:
+            await self._try_command(
+                "Unable to switch to selected map: %s",
+                self.device.set_selected_map,
+                map_id,
+            )
+            if start_delay > 0:
+                await asyncio.sleep(start_delay)
+            if hasattr(self, "coordinator"):
+                await self.coordinator.async_request_refresh()
+
+        await self._try_command("Unable to call start: %s", self.device.start)
+
+    async def async_run_map_by_name(
+        self, map_name: str, start_delay: int = 5
+    ) -> None:
+        """Resolve a map by displayed name, then select it and start mowing."""
+        map_name = map_name.strip()
+        if not map_name:
+            raise HomeAssistantError("map_name must not be empty")
+
+        map_id = next(
+            (
+                map_id
+                for map_id, map_data in self.device.status.map_data_list.items()
+                if getattr(map_data, "map_name", None) == map_name
+            ),
+            None,
+        )
+        if map_id is None:
+            available = ", ".join(
+                getattr(map_data, "map_name", str(map_id))
+                for map_id, map_data in self.device.status.map_data_list.items()
+            )
+            raise HomeAssistantError(
+                f"Unknown map_name: {map_name}. Available maps: {available}"
+            )
+
+        await self.async_run_map(map_id, start_delay)
 
     async def async_delete_map(self, map_id=None) -> None:
         """Delete a map."""
