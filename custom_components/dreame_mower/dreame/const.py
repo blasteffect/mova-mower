@@ -695,6 +695,7 @@ class DeviceStatus(IntEnum):
     UPDATING = 14
     CHARGING_PAUSED_HIGH_TEMPERATURE = 15  # Charging paused: battery temperature too high (issue #167)
     CHARGING_PAUSED_LOW_TEMPERATURE = 16  # Charging paused: battery temperature too low (issue #40)
+    REPOSITIONING = 19  # MOVA 1200 is locating itself on the active map
     MAINTENANCE_PAUSED = 75  # Paused at the maintenance point (issue #162)
 
 
@@ -711,8 +712,10 @@ STATUS_MAPPING: dict[int, str] = {
     DeviceStatus.UPDATING: "updating",
     DeviceStatus.CHARGING_PAUSED_HIGH_TEMPERATURE: "charging_paused_high_temperature",
     DeviceStatus.CHARGING_PAUSED_LOW_TEMPERATURE: "charging_paused_low_temperature",
-    DeviceStatus.MAINTENANCE_PAUSED: "maintenance_paused"
+    DeviceStatus.REPOSITIONING: "repositioning",
+    DeviceStatus.MAINTENANCE_PAUSED: "maintenance_paused",
 }
+
 
 def map_status_to_activity(status: int) -> LawnMowerActivity:
     """Map device status code to LawnMowerActivity.
@@ -723,6 +726,10 @@ def map_status_to_activity(status: int) -> LawnMowerActivity:
     if status in [DeviceStatus.MOWING]:
         return LawnMowerActivity.MOWING
     elif status in [DeviceStatus.STANDBY, DeviceStatus.PAUSED, DeviceStatus.MAINTENANCE_PAUSED]:
+        return LawnMowerActivity.PAUSED
+    elif status == DeviceStatus.REPOSITIONING:
+        # PAUSED is available throughout the supported HA 2026.4+ range and
+        # avoids presenting a moving, relocating mower as docked.
         return LawnMowerActivity.PAUSED
     elif status in [DeviceStatus.PAUSED_DUE_TO_ERRORS]:
         return LawnMowerActivity.ERROR

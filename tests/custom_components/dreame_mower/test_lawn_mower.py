@@ -41,6 +41,7 @@ def _make_coordinator(connected=True, status_code=0):
     coordinator.device.start_mowing_spots = AsyncMock(return_value=True)
     coordinator.device.start_mowing_generic = AsyncMock(return_value=True)
     coordinator.device.mowing_session_active = False
+    coordinator.current_map_id = 1
     coordinator.supports_cutting_height = True
     coordinator.async_set_mowing_preference_mode = AsyncMock(return_value=True)
     coordinator.async_set_mowing_settings = AsyncMock(return_value=True)
@@ -390,6 +391,54 @@ async def test_select_map_reports_a_failed_switch():
 
     with pytest.raises(HomeAssistantError, match="Failed to switch to map 2"):
         await entity.async_select_map(2)
+
+
+@pytest.mark.asyncio
+async def test_legacy_run_map_switches_then_starts_the_requested_map():
+    coordinator = _make_coordinator()
+    coordinator.available_maps = [{"id": 1, "name": "Front"}, {"id": 2, "name": "Back"}]
+    coordinator.device.set_current_map = AsyncMock(return_value=True)
+    entity = _make_entity(coordinator)
+
+    await entity.async_run_map(2, start_delay=0)
+
+    coordinator.device.set_current_map.assert_awaited_once_with(2)
+    coordinator.device.start_mowing.assert_awaited_once_with(mode=MowingMode.ALL_AREA, map_id=2)
+
+
+@pytest.mark.asyncio
+async def test_legacy_run_map_by_name_is_case_insensitive():
+    coordinator = _make_coordinator()
+    coordinator.available_maps = [{"id": 1, "name": "Front Garden"}, {"id": 2, "name": "Back Garden"}]
+    entity = _make_entity(coordinator)
+    entity.async_run_map = AsyncMock()
+
+    await entity.async_run_map_by_name(" back garden ", start_delay=7)
+
+    entity.async_run_map.assert_awaited_once_with(2, 7)
+
+
+@pytest.mark.asyncio
+async def test_legacy_run_map_rejects_an_active_task():
+    coordinator = _make_coordinator()
+    coordinator.available_maps = [{"id": 1, "name": "Front"}]
+    coordinator.device.mowing_session_active = True
+    entity = _make_entity(coordinator)
+
+    with pytest.raises(HomeAssistantError, match="task in progress"):
+        await entity.async_run_map(1, start_delay=0)
+
+    coordinator.device.start_mowing.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_legacy_run_map_by_name_lists_available_maps_on_error():
+    coordinator = _make_coordinator()
+    coordinator.available_maps = [{"id": 1, "name": "Front Garden"}]
+    entity = _make_entity(coordinator)
+
+    with pytest.raises(HomeAssistantError, match="Front Garden"):
+        await entity.async_run_map_by_name("Orchard", start_delay=0)
 
 
 @pytest.mark.asyncio

@@ -292,7 +292,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         f"{coordinator.device_mac}_{key}" for key in _RETIRED_ENTITY_KEYS
     }
     entity_registry = er.async_get(hass)
-    for entity_entry in er.async_entries_for_config_entry(entity_registry, entry.entry_id):
+    config_entry_entities = er.async_entries_for_config_entry(entity_registry, entry.entry_id)
+
+    # mova-mower 0.1.x used the integration domain as the mower entity key.
+    # Keep the registry row (and therefore the user's entity_id, history and
+    # dashboard references) while adopting the v2 entity key.
+    legacy_mower_unique_id = f"{coordinator.device_mac}_{DOMAIN}"
+    current_mower_unique_id = f"{coordinator.device_mac}_{Platform.LAWN_MOWER}"
+    for entity_entry in config_entry_entities:
+        if entity_entry.unique_id == legacy_mower_unique_id:
+            entity_registry.async_update_entity(
+                entity_entry.entity_id,
+                new_unique_id=current_mower_unique_id,
+            )
+
+    for entity_entry in config_entry_entities:
         if entity_entry.unique_id in retired_unique_ids:
             entity_registry.async_remove(entity_entry.entity_id)
 

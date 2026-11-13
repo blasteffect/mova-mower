@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import time as dt_time
 from typing import Any
@@ -90,6 +91,12 @@ MINIMAL_SUPPORT_FEATURES = (
     | LawnMowerEntityFeature.DOCK
 )
 
+LEGACY_RUN_MAP_SERVICE = "mower_run_map"
+LEGACY_RUN_MAP_BY_NAME_SERVICE = "mower_run_map_by_name"
+LEGACY_SELECT_MAP_SERVICE = "mower_select_map"
+LEGACY_START_DELAY_DEFAULT = 5
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -138,6 +145,34 @@ async def async_setup_entry(
         "select_map",
         {vol.Required("map_id"): vol.Coerce(int)},
         "async_select_map",
+    )
+    platform.async_register_entity_service(
+        LEGACY_SELECT_MAP_SERVICE,
+        {vol.Required("map_id"): vol.All(vol.Coerce(int), vol.Range(min=1))},
+        "async_select_map",
+    )
+    # Backward-compatible actions from blasteffect/mova-mower 0.1.x. The v2
+    # protocol confirms the active map before these actions start the mower,
+    # while start_delay remains accepted so existing automations keep working.
+    platform.async_register_entity_service(
+        LEGACY_RUN_MAP_SERVICE,
+        {
+            vol.Required("map_id"): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            vol.Optional("start_delay", default=LEGACY_START_DELAY_DEFAULT): vol.All(
+                vol.Coerce(int), vol.Range(min=0, max=60)
+            ),
+        },
+        "async_run_map",
+    )
+    platform.async_register_entity_service(
+        LEGACY_RUN_MAP_BY_NAME_SERVICE,
+        {
+            vol.Required("map_name"): cv.string,
+            vol.Optional("start_delay", default=LEGACY_START_DELAY_DEFAULT): vol.All(
+                vol.Coerce(int), vol.Range(min=0, max=60)
+            ),
+        },
+        "async_run_map_by_name",
     )
     platform.async_register_entity_service(
         "set_mowing_settings",
@@ -484,6 +519,60 @@ class DreameMowerLawnMower(DreameMowerEntity, LawnMowerEntity):
             )
 
         raise HomeAssistantError(f"Failed to switch to map {map_id}")
+
+    async def async_run_map(self, map_id: int, start_delay: int = LEGACY_START_DELAY_DEFAULT) -> None:
+        """Select a map and start an all-area task (legacy fork action)."""
+        if self.coordinator.device.mowing_session_active:
+            raise HomeAssistantError(
+                "The mower already has a task in progress. Finish or cancel it before starting another map."
+            )
+
+        available_ids = {int(map_entry["id"]) for map_entry in self.coordinator.available_maps}
+        if map_id not in available_ids:
+            raise HomeAssistantError(f"The mower holds no map with ID {map_id}")
+
+        if self.coordinator.current_map_id != map_id:
+            await self.async_select_map(map_id)
+            if start_delay:
+                await asyncio.sleep(start_delay)
+
+        with device_errors_as_ha_errors():
+            started = await self.coordinator.device.start_mowing(
+                mode=MowingMode.ALL_AREA,
+                map_id=map_id,
+            )
+        if not started:
+            raise HomeAssistantError(f"Failed to start all-area mowing on map {map_id}")
+
+    async def async_run_map_by_name(
+        self,
+        map_name: str,
+        start_delay: int = LEGACY_START_DELAY_DEFAULT,
+    ) -> None:
+        """Resolve a saved map by name and start mowing it (legacy fork action)."""
+        requested_name = map_name.strip()
+        if not requested_name:
+            raise HomeAssistantError("Map name must not be empty")
+
+        matches = [
+            map_entry
+            for map_entry in self.coordinator.available_maps
+            if str(map_entry.get("name", "")).strip().casefold() == requested_name.casefold()
+        ]
+        if not matches:
+            available_names = ", ".join(
+                str(map_entry.get("name") or map_entry["id"])
+                for map_entry in self.coordinator.available_maps
+            )
+            raise HomeAssistantError(
+                f"The mower holds no map named {requested_name!r}. Available maps: {available_names or 'none'}"
+            )
+        if len(matches) > 1:
+            raise HomeAssistantError(
+                f"Several maps are named {requested_name!r}; use mower_run_map with a map ID instead"
+            )
+
+        await self.async_run_map(int(matches[0]["id"]), start_delay)
 
     async def _edit_map(self, change: Any) -> Any:
         """Make a change to the map and let everything showing it know."""

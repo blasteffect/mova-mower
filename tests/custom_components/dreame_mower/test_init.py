@@ -204,6 +204,32 @@ async def test_setup_drops_the_entities_earlier_versions_created(hass):
     assert not {Platform.CAMERA, Platform.BUTTON, Platform.NUMBER} & set(platforms)
 
 
+async def test_setup_migrates_the_legacy_mower_unique_id_in_place(hass):
+    """The v2 migration must preserve an existing mower entity_id and its history."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = _make_coordinator()
+    coordinator.device_mac = "11:22:33:44:55:66"
+    registry = er.async_get(hass)
+    legacy = registry.async_get_or_create(
+        Platform.LAWN_MOWER,
+        DOMAIN,
+        "11:22:33:44:55:66_dreame_mower",
+        suggested_object_id="garden_mower",
+        config_entry=entry,
+    )
+
+    with patch("custom_components.dreame_mower.DreameMowerCoordinator", return_value=coordinator), patch.object(
+        hass.config_entries, "async_forward_entry_setups", AsyncMock(return_value=None)
+    ):
+        assert await async_setup_entry(hass, entry) is True
+
+    migrated = registry.async_get(legacy.entity_id)
+    assert migrated is not None
+    assert migrated.entity_id == legacy.entity_id
+    assert migrated.unique_id == "11:22:33:44:55:66_lawn_mower"
+
+
 async def test_async_setup_entry_reads_the_preferences_of_fixed_height_models(hass):
     """A model with a manual height dial still keeps the other mowing settings."""
     entry = _make_entry()

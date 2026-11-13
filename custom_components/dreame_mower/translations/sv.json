@@ -79,6 +79,7 @@
           "updating": "Uppdatering",
           "charging_paused_high_temperature": "Laddning pausad: batteritemperaturen är för hög",
           "charging_paused_low_temperature": "Laddning pausad: batteritemperaturen är för låg",
+          "repositioning": "Positionerar om",
           "maintenance_paused": "Pausad vid underhållspunkten"
         }
       },

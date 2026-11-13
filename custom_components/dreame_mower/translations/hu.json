@@ -79,6 +79,7 @@
           "updating": "Frissítés",
           "charging_paused_high_temperature": "Töltés szüneteltetve: az akkumulátor hőmérséklete túl magas",
           "charging_paused_low_temperature": "Töltés szüneteltetve: az akkumulátor hőmérséklete túl alacsony",
+          "repositioning": "Újrapozicionálás",
           "maintenance_paused": "Szüneteltetve a karbantartási ponton"
         }
       },

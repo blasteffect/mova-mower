@@ -79,6 +79,7 @@
           "updating": "Оновлення",
           "charging_paused_high_temperature": "Зарядка призупинена: температура акумулятора занадто висока",
           "charging_paused_low_temperature": "Зарядка призупинена: температура акумулятора занадто низька",
+          "repositioning": "Перепозиціонування",
           "maintenance_paused": "Призупинено в точці обслуговування"
         }
       },

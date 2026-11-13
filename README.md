@@ -1,10 +1,14 @@
 # 🏡 Dreame & MOVA Lawn Mower Integration for Home Assistant
 
-[![GitHub Release](https://img.shields.io/github/v/release/antondaubert/dreame-mower?style=flat-square)](https://github.com/antondaubert/dreame-mower/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/blasteffect/mova-mower?style=flat-square)](https://github.com/blasteffect/mova-mower/releases)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square)](https://hacs.xyz/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
 A Home Assistant integration for **Dreame** and **MOVA** robotic lawn mowers, with a live map card to mow, follow and set up the mower from a dashboard.
+
+This MOVA-focused fork is based on the stable `antondaubert/dreame-mower`
+2.0.3 architecture and keeps the map-based automation actions from
+`blasteffect/mova-mower` 0.1.x.
 
 *If this integration saves you time, consider to [buy me a ☕](https://buymeacoffee.com/antondaubert).*
 
@@ -27,10 +31,9 @@ Provided "as-is" under the MIT License for personal, non-commercial use with dev
 
 ## Installation
 
-1. Ensure [HACS](https://hacs.xyz/) is installed.
-2. In HACS, open ⋮ → **Custom repositories** and add `https://github.com/antondaubert/dreame-mower` as an **Integration**.
-3. Install **Dreame Mower** and restart Home Assistant.
-4. **Settings → Devices & Services → Add Integration → Dreame Mower**, and sign in with your Dreamehome or MOVAhome account.
+1. In the Home Assistant Marketplace (or [HACS](https://hacs.xyz/) on older installations), add `https://github.com/blasteffect/mova-mower` as a custom **Integration**.
+2. Install **Dreame Mower** and restart Home Assistant.
+3. **Settings → Devices & Services → Add Integration → Dreame Mower**, and sign in with your Dreamehome or MOVAhome account.
 
 ## Map card
 
@@ -105,6 +108,7 @@ Besides the standard `lawn_mower` actions, the integration offers these, each ta
 | `start_all_area_mowing`, `start_zone_mowing`, `start_edge_mowing`, `start_spot_mowing` | Mow the whole map, or several zones, edges or spot areas in one run |
 | `end_task`, `recharge`, `stop_returning` | End a task where the mower is, send it to charge keeping the task, or stop it on its way home |
 | `select_map` | Make another map the active one (only while no task runs) |
+| `mower_select_map`, `mower_run_map`, `mower_run_map_by_name` | Compatibility actions retained for MOVA Mower 0.1.x automations |
 | `set_mowing_settings`, `set_mowing_preference_mode` | Change the mowing settings of a map or a zone, or switch between map-wide and per-zone settings |
 | `set_no_go_zone`, `set_ignore_obstacle_area`, `set_spot_area`, `set_maintenance_point`, `delete_map_item` | Draw, change or delete what lies on the map |
 | `rename_zone`, `split_zone`, `merge_zones`, `rename_map`, `backup_map`, `restore_map`, `delete_map` | Change zones and maps |
@@ -119,14 +123,25 @@ data:
   zone_ids: [1, 3]
 ```
 
+Existing MOVA Mower 0.1.x automations remain valid:
+
+```yaml
+action: dreame_mower.mower_run_map_by_name
+target:
+  entity_id: lawn_mower.your_mower
+data:
+  map_name: Front Garden
+  start_delay: 5
+```
+
 Zone, contour and map IDs are in the mower entity's attributes once the map has been read; a spot area's ID is what `set_spot_area` answers with.
 
 To mow on a schedule kept in Home Assistant rather than on the mower, import the [schedule blueprint](blueprints/automation/antondaubert/dreame_mower_ha_schedule.yaml).
 
 ## Community & Support
 
-- **Discussions**: Questions and ideas → [GitHub Discussions](https://github.com/antondaubert/dreame-mower/discussions)
-- **Issues**: Bug reports and feature requests → [GitHub Issues](https://github.com/antondaubert/dreame-mower/issues)
+- **Upstream project**: [antondaubert/dreame-mower](https://github.com/antondaubert/dreame-mower)
+- **Issues for this fork**: [blasteffect/mova-mower issues](https://github.com/blasteffect/mova-mower/issues)
 - **Contributing**: see [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License

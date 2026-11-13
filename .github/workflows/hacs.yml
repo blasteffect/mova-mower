@@ -10,7 +10,7 @@ jobs:
   hacs:
     name: HACS Action
     # Validate the repository HACS installs from.
-    if: github.repository == 'antondaubert/dreame-mower'
+    if: github.repository == 'blasteffect/mova-mower'
     runs-on: "ubuntu-latest"
     steps:
       - name: HACS Action

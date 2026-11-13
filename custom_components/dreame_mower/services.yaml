@@ -114,6 +114,85 @@ select_map:
       required: true
       example: 2
 
+mower_run_map:
+  name: Mow a map (legacy compatible)
+  description: >-
+    Select a saved map by ID, wait for the optional compatibility delay, and
+    start mowing the whole map. Preserves automations created with MOVA Mower
+    0.1.x.
+  target:
+    entity:
+      integration: dreame_mower
+      domain: lawn_mower
+  fields:
+    map_id:
+      name: Map ID
+      description: Map to select and mow. Available IDs are in the mower entity's maps attribute.
+      required: true
+      example: 2
+      selector:
+        number:
+          min: 1
+          mode: box
+    start_delay:
+      name: Start delay
+      description: Extra delay in seconds after switching maps. The v2 protocol already confirms the switch.
+      required: false
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 60
+          unit_of_measurement: s
+          mode: box
+
+mower_select_map:
+  name: Select map (legacy compatible)
+  description: Compatibility alias for select_map used by MOVA Mower 0.1.x automations.
+  target:
+    entity:
+      integration: dreame_mower
+      domain: lawn_mower
+  fields:
+    map_id:
+      name: Map ID
+      description: Map to make active.
+      required: true
+      example: 2
+      selector:
+        number:
+          min: 1
+          mode: box
+
+mower_run_map_by_name:
+  name: Mow a named map (legacy compatible)
+  description: >-
+    Select a saved map by its displayed name, wait for the optional
+    compatibility delay, and start mowing the whole map.
+  target:
+    entity:
+      integration: dreame_mower
+      domain: lawn_mower
+  fields:
+    map_name:
+      name: Map name
+      description: Displayed name of the map to select and mow.
+      required: true
+      example: Front Garden
+      selector:
+        text:
+    start_delay:
+      name: Start delay
+      description: Extra delay in seconds after switching maps. The v2 protocol already confirms the switch.
+      required: false
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 60
+          unit_of_measurement: s
+          mode: box
+
 set_mowing_settings:
   name: Set mowing settings
   description: >-

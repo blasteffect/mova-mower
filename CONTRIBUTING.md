@@ -26,7 +26,7 @@ cannot install the Home Assistant release the tests run against; Node.js runs
 the map card's tests.
 
 ```bash
-git clone https://github.com/antondaubert/dreame-mower.git
+git clone https://github.com/blasteffect/mova-mower.git
 cd dreame-mower
 python3 -m venv .venv
 .venv/bin/pip install -r tests/requirements.txt

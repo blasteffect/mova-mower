@@ -68,6 +68,15 @@ class TestDeviceMqttPropertyUpdate:
                 "status",
                 lambda v: v == 13
             ),
+            (  # MOVA 1200: opaque did must not be decoded as a property ID; status 19 is repositioning
+                {
+                    "id": 102,
+                    "method": "properties_changed",
+                    "params": [{"did": "-115170541", "piid": 1, "siid": 2, "value": 19}],
+                },
+                "status",
+                lambda v: v == 19,
+            ),
             (  # Issue #51: 1:4 13-byte pose format (mova.mower.g2529d fw 4.3.6_0169)
                 {
                     "id": 244,

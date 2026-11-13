@@ -79,6 +79,7 @@
           "updating": "Aggiornamento",
           "charging_paused_high_temperature": "Ricarica in pausa: temperatura della batteria troppo alta",
           "charging_paused_low_temperature": "Ricarica in pausa: temperatura della batteria troppo bassa",
+          "repositioning": "Riposizionamento",
           "maintenance_paused": "In pausa al punto di manutenzione"
         }
       },

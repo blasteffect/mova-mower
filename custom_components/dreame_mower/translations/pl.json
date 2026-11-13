@@ -79,6 +79,7 @@
           "updating": "Aktualizacja",
           "charging_paused_high_temperature": "Ładowanie wstrzymane: temperatura baterii zbyt wysoka",
           "charging_paused_low_temperature": "Ładowanie wstrzymane: temperatura baterii zbyt niska",
+          "repositioning": "Zmiana położenia",
           "maintenance_paused": "Wstrzymano w punkcie konserwacji"
         }
       },

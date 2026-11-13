@@ -33,6 +33,9 @@ class TestMapStatusToActivity:
     def test_returning(self):
         assert map_status_to_activity(DeviceStatus.RETURNING_TO_CHARGE) == LawnMowerActivity.RETURNING
 
+    def test_repositioning(self):
+        assert map_status_to_activity(DeviceStatus.REPOSITIONING) == LawnMowerActivity.PAUSED
+
     def test_docked_states(self):
         for status in (DeviceStatus.CHARGING, DeviceStatus.MAPPING,
                        DeviceStatus.CHARGING_COMPLETE, DeviceStatus.UPDATING,
@@ -55,6 +58,9 @@ class TestStatusMapping:
 
     def test_maintenance_paused(self):
         assert STATUS_MAPPING[DeviceStatus.MAINTENANCE_PAUSED] == "maintenance_paused"
+
+    def test_mova_1200_repositioning(self):
+        assert STATUS_MAPPING[DeviceStatus.REPOSITIONING] == "repositioning"
 
 
 class TestCuttingHeightSupport:
@@ -133,4 +139,3 @@ class TestEdgeBladeOffsetSupport:
     def test_unknown_or_missing_models_are_taken_to_support_it(self):
         assert supports_edge_blade_offset("dreame.mower.x9999") is True
         assert supports_edge_blade_offset(None) is True
-

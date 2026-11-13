@@ -9,7 +9,7 @@ blueprint:
     Zone, contour and spot-area IDs belong to a map, so they refer to the
     map the mower is on when the block starts.
   domain: automation
-  source_url: https://github.com/antondaubert/dreame-mower/blob/main/blueprints/automation/antondaubert/dreame_mower_ha_schedule.yaml
+  source_url: https://github.com/blasteffect/mova-mower/blob/main/blueprints/automation/antondaubert/dreame_mower_ha_schedule.yaml
   homeassistant:
     min_version: 2026.7.0
   input:
